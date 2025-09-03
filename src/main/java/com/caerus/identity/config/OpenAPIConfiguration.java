@@ -35,21 +35,21 @@ import com.caerus.identity.handlers.ErrorResponse;
                         url = "http://localhost:8086"
 
                 )
-        },
-        security = {
+        }
+        /*security = {
                 @SecurityRequirement(
                         name = "bearerAuth"
                 )
-        }
+        }*/
 )
-@SecurityScheme(
+/*@SecurityScheme(
         name = "bearerAuth",
         description = "JWT auth description",
         scheme = "bearer",
         type = SecuritySchemeType.HTTP,
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER
-)
+)*/
 
 public class OpenAPIConfiguration {
         @Bean
