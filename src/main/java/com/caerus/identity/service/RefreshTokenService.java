@@ -1,22 +1,60 @@
 package com.caerus.identity.service;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.ResponseCookie;
+import com.caerus.identity.entity.RefreshToken;
+import com.caerus.identity.exception.InvalidToken;
+import com.caerus.identity.repository.RefreshTokenRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.caerus.identity.entities.RefreshToken;
-import com.caerus.identity.payload.request.RefreshTokenRequest;
-import com.caerus.identity.payload.response.RefreshTokenResponse;
+import java.time.Instant;
+import java.util.UUID;
 
-import java.util.Optional;
+@Service
+@RequiredArgsConstructor
+public class RefreshTokenService {
 
-public interface RefreshTokenService {
+    private final RefreshTokenRepository refreshTokenRepository;
 
-    RefreshToken createRefreshToken(Long userId);
-    RefreshToken verifyExpiration(RefreshToken token);
-    Optional<RefreshToken> findByToken(String token);
-    RefreshTokenResponse generateNewToken(RefreshTokenRequest request);
-    ResponseCookie generateRefreshTokenCookie(String token);
-    String getRefreshTokenFromCookies(HttpServletRequest request);
-    void deleteByToken(String token);
-    ResponseCookie getCleanRefreshTokenCookie();
+    @Value("${application.security.jwt.refresh-token.expiration}")
+    private long refreshExpirationDuration;
+
+    @Transactional
+    public RefreshToken createRefreshToken(String email){
+        refreshTokenRepository.deleteByUserEmail(email);
+
+        RefreshToken refreshToken = new RefreshToken();
+        refreshToken.setUserEmail(email);
+        refreshToken.setToken(UUID.randomUUID().toString());
+        refreshToken.setExpiryDate(Instant.now().plusMillis(refreshExpirationDuration));
+
+        return refreshTokenRepository.save(refreshToken);
+    }
+
+    @Transactional(readOnly = true)
+    public RefreshToken verifyExpiration(String token){
+        RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidToken("Refresh token not found L37 here"));
+
+       if(refreshToken.getExpiryDate().isBefore(Instant.now())){
+           refreshTokenRepository.delete(refreshToken);
+           throw new InvalidToken("Refresh token expired");
+       }
+
+       return refreshToken;
+    }
+
+    @Transactional
+    public void deleteByUserEmail(String email){
+        refreshTokenRepository.deleteByUserEmail(email);
+    }
+
+    @Transactional
+    public void deleteRefreshToken(String refreshToken){
+        int rows = refreshTokenRepository.deleteByToken(refreshToken);
+        if(rows==0){
+            throw new InvalidToken("Refresh token not found Komal Singhh");
+        }
+    }
 }
