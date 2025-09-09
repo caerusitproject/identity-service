@@ -1,11 +1,11 @@
 spring:
   application:
-    name : Identity-service-ticketing
+    name: Identity-service-ticketing
   datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/identity_service
     username: postgres
-    password: Welcome@1234
+    password: "Welcome@1234"
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -22,7 +22,30 @@ application:
     jwt:
       secret-key: 586B633834416E396D7436753879382F423F4428482B4C6250655367566B5970
       expiration: 900000 #  15 min in ms
-      cookie-name: jwt-cookie
       refresh-token:
         expiration: 1296000000 # 15 days in ms
-        cookie-name: refresh-jwt-cookie
+cors:
+  allowed-origins: "http://localhost:3000"
+
+services:
+  user-service:
+    url: http://localhost:8081
+logging:
+  level:
+    com.caerus.identity.client: DEBUG
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+  retry:
+    instances:
+      userService:
+        maxAttempts: 3
+        waitDuration: 2s

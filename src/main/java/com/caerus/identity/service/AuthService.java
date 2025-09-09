@@ -39,12 +39,15 @@ public class AuthService {
                 )
         );
 
+        Long userId = user.data().get("id");
+
         UserCredentials creds = new UserCredentials();
+        creds.setId(userId);
         creds.setEmail(request.email());
         creds.setPasswordHash(passwordEncoder.encode(request.password()));
         userCredentialsRepository.save(creds);
 
-        return user.data().get("id");
+        return userId;
     }
 
 
@@ -56,7 +59,7 @@ public class AuthService {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 
-        String accessToken = jwtUtil.generateAccessToken(creds.getEmail());
+        String accessToken = jwtUtil.generateAccessToken(creds);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(creds.getEmail());
 
         return new AuthResponse(accessToken, refreshToken.getToken());
@@ -64,7 +67,11 @@ public class AuthService {
 
     public AuthResponse refreshToken(RefreshTokenRequest request){
        RefreshToken refreshToken = refreshTokenService.verifyExpiration(request.refreshToken());
-       String accessToken = jwtUtil.generateAccessToken(refreshToken.getUserEmail());
+
+       UserCredentials creds = userCredentialsRepository.findByEmail(refreshToken.getUserEmail())
+               .orElseThrow(()-> new UserNotFoundException("User not found with email: "+ refreshToken.getUserEmail()));
+
+       String accessToken = jwtUtil.generateAccessToken(creds);
        return new AuthResponse(accessToken, refreshToken.getToken());
     }
 

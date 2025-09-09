@@ -2,6 +2,7 @@ package com.caerus.identity.exception;
 
 import com.caerus.identity.dto.ApiResponse;
 import feign.FeignException;
+import feign.RetryableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -45,9 +46,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ApiResponse<String>> handleFeignException(FeignException ex) {
+        int status = (ex.status() > 0 ? ex.status() : HttpStatus.BAD_GATEWAY.value());
         return ResponseEntity
                 .status(ex.status())
                 .body(ApiResponse.failure(ex.getMessage()));
+    }
+
+    @ExceptionHandler(RetryableException.class)
+    public ResponseEntity<ApiResponse<String>> handleRetryableException(RetryableException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.failure("User service is unreachable. Please try again later."));
     }
 
     @ExceptionHandler(UserServiceUnavailableException.class)

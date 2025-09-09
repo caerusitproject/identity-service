@@ -1,5 +1,6 @@
 package com.caerus.identity.entity;
 
+import com.caerus.identity.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -15,7 +16,7 @@ import lombok.Setter;
 public class UserCredentials {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(unique = true, nullable = false)
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -25,4 +26,8 @@ public class UserCredentials {
     private String passwordHash;
 
     private boolean enabled = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
 }
