@@ -4,12 +4,9 @@ import com.caerus.identity.entity.UserCredentials;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.apache.commons.codec.binary.Hex;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.security.KeyPair;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,22 +15,19 @@ import java.util.stream.Collectors;
 @Component
 public class JwtUtil {
 
-    @Value("${application.security.jwt.secret-key}")
-    private String jwtSecret;
+    private final KeyPair keyPair;
+    private final long jwtExpiration;
+    private final String keyId;
 
-    @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
+    public JwtUtil(RsaKeyConfig rsaKeyConfig,
+                   JwtProperties properties, String keyId) throws Exception {
+        this.keyPair = rsaKeyConfig.keyPair();
+        this.jwtExpiration = properties.getAccessTokenExpiration();
+        this.keyId = keyId;
 
-    private SecretKey getSigningKey(){
-        try {
-            byte[] keyBytes = Hex.decodeHex(jwtSecret.toCharArray());
-            return Keys.hmacShaKeyFor(keyBytes);
-        } catch (Exception e) {
-            throw new IllegalStateException("Invalid JWT secret key format", e);
-        }
     }
 
-    public String generateAccessToken(UserCredentials user){
+    public String generateAccessToken(UserCredentials user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
         claims.put("privileges", user.getRole().getPrivileges()
@@ -46,13 +40,14 @@ public class JwtUtil {
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .signWith(keyPair.getPrivate(), SignatureAlgorithm.RS256)
+                .setHeaderParam("kid", keyId)
                 .compact();
     }
 
-    public Claims extractAllClaims(String token)  {
+    public Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
+                .setSigningKey(keyPair.getPublic())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -62,11 +57,11 @@ public class JwtUtil {
         return extractAllClaims(token).getSubject();
     }
 
-    public boolean validateJwtToken(String token){
+    public boolean validateJwtToken(String token) {
         try {
             extractAllClaims(token);
             return true;
-        } catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
