@@ -1,3 +1,7 @@
+server:
+  port: 8086
+
+
 spring:
   application:
     name: Identity-service-ticketing
@@ -15,24 +19,42 @@ spring:
         format_sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
-server:
-  port: 8086
+  security:
+    oauth2:
+      authorizationserver:
+        issuer: http://localhost:8086
+
+
+jwt:
+  keystore:
+    location: classpath:jwt-keystore.jks
+    password: changeit
+  key:
+    alias: jwt-key
+    password: changeit
+    id: caerus-key-1
+
+
 application:
   security:
     jwt:
-      secret-key: 586B633834416E396D7436753879382F423F4428482B4C6250655367566B5970
       expiration: 900000 #  15 min in ms
       refresh-token:
         expiration: 1296000000 # 15 days in ms
+
+
 cors:
   allowed-origins: "http://localhost:3000"
 
 services:
   user-service:
     url: http://localhost:8081
+
+
 logging:
   level:
     com.caerus.identity.client: DEBUG
+
 
 resilience4j:
   circuitbreaker:
