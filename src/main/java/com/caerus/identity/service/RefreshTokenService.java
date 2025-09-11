@@ -21,7 +21,7 @@ public class RefreshTokenService {
     private long refreshExpirationDuration;
 
     @Transactional
-    public RefreshToken createRefreshToken(String email){
+    public RefreshToken createRefreshToken(String email) {
         refreshTokenRepository.deleteByUserEmail(email);
 
         RefreshToken refreshToken = new RefreshToken();
@@ -33,28 +33,28 @@ public class RefreshTokenService {
     }
 
     @Transactional(readOnly = true)
-    public RefreshToken verifyExpiration(String token){
+    public RefreshToken verifyExpiration(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new InvalidToken("Refresh token not found L37 here"));
+                .orElseThrow(() -> new InvalidToken("Invalid token"));
 
-       if(refreshToken.getExpiryDate().isBefore(Instant.now())){
-           refreshTokenRepository.delete(refreshToken);
-           throw new InvalidToken("Refresh token expired");
-       }
+        if (refreshToken.getExpiryDate().isBefore(Instant.now())) {
+            refreshTokenRepository.delete(refreshToken);
+            throw new InvalidToken("Refresh token expired");
+        }
 
-       return refreshToken;
+        return refreshToken;
     }
 
     @Transactional
-    public void deleteByUserEmail(String email){
+    public void deleteByUserEmail(String email) {
         refreshTokenRepository.deleteByUserEmail(email);
     }
 
     @Transactional
-    public void deleteRefreshToken(String refreshToken){
+    public void deleteRefreshToken(String refreshToken) {
         int rows = refreshTokenRepository.deleteByToken(refreshToken);
-        if(rows==0){
-            throw new InvalidToken("Refresh token not found Komal Singhh");
+        if (rows == 0) {
+            throw new InvalidToken("Invalid token");
         }
     }
 }
