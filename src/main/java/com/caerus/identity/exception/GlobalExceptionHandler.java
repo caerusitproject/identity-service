@@ -32,7 +32,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidToken.class)
     public ResponseEntity<ApiResponse<String>> handleInvalidToken(InvalidToken ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.failure(ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.failure(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

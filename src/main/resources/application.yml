@@ -4,7 +4,7 @@ server:
 
 spring:
   application:
-    name: Identity-service-ticketing
+    name: identity-service
   datasource:
     url: jdbc:postgresql://localhost:5432/identity_service
     username: postgres
@@ -44,12 +44,20 @@ application:
 
 
 cors:
-  allowed-origins: "http://localhost:3000"
+  allowed-origins: "*"
 
 services:
   user-service:
     url: http://localhost:8081
 
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+    instance-id: ${spring.application.name}:${server.port}
 
 logging:
   level:
