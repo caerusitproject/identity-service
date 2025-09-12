@@ -52,6 +52,11 @@ public class RsaKeyConfig {
     }
 
     @Bean
+    public RSAPublicKey rsaPublicKey(KeyPair keyPair) {
+        return (RSAPublicKey) keyPair.getPublic();
+    }
+
+    @Bean
     public JWKSource<SecurityContext> jwkSource(KeyPair keyPair) {
         RSAKey rsaKey = new RSAKey.Builder((RSAPublicKey) keyPair.getPublic())
                 .privateKey((RSAPrivateKey) keyPair.getPrivate())

@@ -12,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -35,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if(authHeader != null && authHeader.startsWith("Bearer ")){
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
             try {
@@ -48,24 +47,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         : Collections.emptyList();
 
                 String role = claims.get("role", String.class);
-                if(role != null){
+                if (role != null) {
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
                 }
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken (
+                        new UsernamePasswordAuthenticationToken(
                                 claims.getSubject(), null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-            } catch (ExpiredJwtException ex){
+            } catch (ExpiredJwtException ex) {
                 log.warn("JWT expired: {}", ex.getMessage());
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Token expired");
+                return;
             } catch (JwtException ex) {
                 log.warn("Invalid JWT: {}", ex.getMessage());
+                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Invalid Token");
+                return;
             } catch (Exception ex) {
                 log.error("JWT processing error: {}", ex.getMessage(), ex);
+                writeError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal error validating token");
+                return;
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setContentType("application/json");
+        response.setStatus(status);
+        response.getWriter().write("{\"error\":\"" + message + "\"}");
     }
 }
