@@ -35,7 +35,7 @@ public class AuthService {
 
         ApiResponse<Map<String, Long>> user = userServiceClient.createUser(
                 new RegisterRequest(
-                        request.email(), request.password(), request.firstName(), request.lastName(), request.phone()
+                        request.email(), request.password(), request.firstName(), request.lastName(), request.countryCode(), request.phoneNumber()
                 )
         );
 
@@ -51,11 +51,11 @@ public class AuthService {
     }
 
 
-    public AuthResponse login(LoginRequest request){
+    public AuthResponse login(LoginRequest request) {
         UserCredentials creds = userCredentialsRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: "+ request.email()));
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.email()));
 
-        if(!passwordEncoder.matches(request.password(), creds.getPasswordHash())){
+        if (!passwordEncoder.matches(request.password(), creds.getPasswordHash())) {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 
@@ -65,17 +65,17 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken.getToken());
     }
 
-    public AuthResponse refreshToken(RefreshTokenRequest request){
-       RefreshToken refreshToken = refreshTokenService.verifyExpiration(request.refreshToken());
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        RefreshToken refreshToken = refreshTokenService.verifyExpiration(request.refreshToken());
 
-       UserCredentials creds = userCredentialsRepository.findByEmail(refreshToken.getUserEmail())
-               .orElseThrow(()-> new UserNotFoundException("User not found with email: "+ refreshToken.getUserEmail()));
+        UserCredentials creds = userCredentialsRepository.findByEmail(refreshToken.getUserEmail())
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + refreshToken.getUserEmail()));
 
-       String accessToken = jwtUtil.generateAccessToken(creds);
-       return new AuthResponse(accessToken, refreshToken.getToken());
+        String accessToken = jwtUtil.generateAccessToken(creds);
+        return new AuthResponse(accessToken, refreshToken.getToken());
     }
 
-    public void logout(String refreshToken){
+    public void logout(String refreshToken) {
         refreshTokenService.deleteRefreshToken(refreshToken);
     }
 

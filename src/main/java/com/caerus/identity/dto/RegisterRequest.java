@@ -19,7 +19,12 @@ public record RegisterRequest(
         @NotEmpty(message = "Last name should not be empty")
         String lastName,
 
-        @NotEmpty(message = "Phone number should not be empty")
-        @Pattern(regexp = "\\d{10}", message = "Phone number should have exactly 10 numbers")
-        String phone
-) {}
+        @Size(max = 4, message = "Country code must be 1 to 4 digits")
+        @NotBlank(message = "Country code should not be empty")
+        String countryCode,
+
+        @Pattern(regexp = "\\d{4,12}", message = "Phone number must be 4 to 12 digits")
+        @NotBlank(message = "Phone number should not be empty")
+        String phoneNumber
+) {
+}
