@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import java.security.KeyPair;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -29,11 +30,11 @@ public class JwtUtil {
 
     public String generateAccessToken(UserCredentials user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
+        claims.put("roles", List.of(user.getRole().name()));
         claims.put("privileges", user.getRole().getPrivileges()
                 .stream()
                 .map(Enum::name)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toList()));
 
         return Jwts.builder()
                 .setClaims(claims)
