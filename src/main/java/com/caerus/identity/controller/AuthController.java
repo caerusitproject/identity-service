@@ -21,7 +21,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Map<String, Long>>> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Long>>> register(@Valid @RequestBody UserRegisterRequestDto request) {
         Long id = authService.register(request);
         Map<String, Long> responseData = Map.of("id", id);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("User registered successfully", responseData));
@@ -43,5 +43,17 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request.refreshToken());
         return ResponseEntity.ok(ApiResponse.success("User logged out successfully", null));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest email) {
+        authService.forgotPassword(email);
+        return ResponseEntity.ok(ApiResponse.success("Reset link has been sent to your email"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Password reset successful"));
     }
 }
