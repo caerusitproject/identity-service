@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ForgotPasswordProducerRoute extends RouteBuilder {
 
-    @Value("${spring.kafka.topic.password-reset}")
+    @Value("${spring.kafka.topic.notification-events}")
     private String forgotPasswordTopic;
 
     @Value("${spring.kafka.bootstrap-servers}")

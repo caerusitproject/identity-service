@@ -100,7 +100,7 @@ public class AuthService {
         passwordResetTokenService.saveToken(existingUser.getEmail(), resetToken, Duration.ofMinutes(15));
 
         ForgotPasswordEvent event = new ForgotPasswordEvent(existingUser.getId(), existingUser.getEmail(), resetToken,
-                UserEventType.PASSWORD_RESET_REQUESTED.name());
+                UserEventType.FORGOT_PASSWORD.name());
 
         producerTemplate.sendBody("direct:forgot-password-events", event);
         log.info("Forgot password event published for user: {}", existingUser.getEmail());
