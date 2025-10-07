@@ -1,7 +1,9 @@
 package com.caerus.identity.entity;
 
-import com.caerus.identity.enums.Role;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,7 +18,7 @@ import lombok.Setter;
 public class UserCredentials {
 
     @Id
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, name = "user_id")
     private Long id;
 
     @Column(unique = true, nullable = false)
@@ -26,8 +28,5 @@ public class UserCredentials {
     private String passwordHash;
 
     private boolean enabled = true;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Role role = Role.USER;
+    
 }
