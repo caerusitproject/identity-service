@@ -10,6 +10,10 @@ import com.caerus.identity.exception.InvalidCredentialsException;
 import com.caerus.identity.exception.UserNotFoundException;
 import com.caerus.identity.repository.UserCredentialsRepository;
 import com.caerus.identity.security.JwtUtil;
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.ProducerTemplate;
@@ -17,112 +21,121 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
-    private final UserCredentialsRepository userCredentialsRepository;
-    private final RefreshTokenService refreshTokenService;
-    private final JwtUtil jwtUtil;
-    private final PasswordEncoder passwordEncoder;
-    private final UserServiceClient userServiceClient;
-    private final PasswordResetTokenService passwordResetTokenService;
-    private final ProducerTemplate producerTemplate;
+  private final UserCredentialsRepository userCredentialsRepository;
+  private final RefreshTokenService refreshTokenService;
+  private final JwtUtil jwtUtil;
+  private final PasswordEncoder passwordEncoder;
+  private final UserServiceClient userServiceClient;
+  private final PasswordResetTokenService passwordResetTokenService;
+  private final ProducerTemplate producerTemplate;
 
-    @Transactional
-    public Long register(UserRegisterRequestDto request) {
-        if (userCredentialsRepository.findByEmail(request.email()).isPresent()) {
-            throw new EmailAlreadyExistsException("User already exists with email: " + request.email());
-        }
-
-        ApiResponse<Map<String, Long>> user = userServiceClient.createUser(
-                new RegisterRequest(
-                        request.email(), request.firstName(), request.lastName(), request.countryCode(), request.phoneNumber(),
-                        Set.of()
-                )
-        );
-
-        Long userId = user.data().get("id");
-
-        UserCredentials creds = new UserCredentials();
-        creds.setId(userId);
-        creds.setEmail(request.email());
-        creds.setPasswordHash(passwordEncoder.encode(request.password()));
-        userCredentialsRepository.save(creds);
-
-        return userId;
+  @Transactional
+  public Long register(UserRegisterRequestDto request) {
+    if (userCredentialsRepository.findByEmail(request.email()).isPresent()) {
+      throw new EmailAlreadyExistsException("User already exists with email: " + request.email());
     }
 
+    ApiResponse<Map<String, Long>> user =
+        userServiceClient.createUser(
+            new RegisterRequest(
+                request.email(),
+                request.firstName(),
+                request.lastName(),
+                request.countryCode(),
+                request.phoneNumber(),
+                Set.of()));
 
-    public AuthResponse login(LoginRequest request) {
-        UserCredentials creds = userCredentialsRepository.findByEmail(request.email())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + request.email()));
+    Long userId = user.data().get("id");
 
-        if (!passwordEncoder.matches(request.password(), creds.getPasswordHash())) {
-            throw new InvalidCredentialsException("Invalid credentials");
-        }
+    UserCredentials creds = new UserCredentials();
+    creds.setId(userId);
+    creds.setEmail(request.email());
+    creds.setPasswordHash(passwordEncoder.encode(request.password()));
+    userCredentialsRepository.save(creds);
 
-        ApiResponse<UserRolesDto> userResponse = userServiceClient.getUserByEmail(request.email());
+    return userId;
+  }
 
-        String accessToken = jwtUtil.generateAccessToken(userResponse.data());
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(creds.getEmail());
+  public AuthResponse login(LoginRequest request) {
+    UserCredentials creds =
+        userCredentialsRepository
+            .findByEmail(request.email())
+            .orElseThrow(
+                () -> new UserNotFoundException("User not found with email: " + request.email()));
 
-        return new AuthResponse(accessToken, refreshToken.getToken());
+    if (!passwordEncoder.matches(request.password(), creds.getPasswordHash())) {
+      throw new InvalidCredentialsException("Invalid credentials");
     }
 
-    public AuthResponse refreshToken(RefreshTokenRequest request) {
-        RefreshToken refreshToken = refreshTokenService.verifyExpiration(request.refreshToken());
+    ApiResponse<UserRolesDto> userResponse = userServiceClient.getUserByEmail(request.email());
 
-        UserCredentials creds = userCredentialsRepository.findByEmail(refreshToken.getUserEmail())
-                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + refreshToken.getUserEmail()));
+    String accessToken = jwtUtil.generateAccessToken(userResponse.data());
+    RefreshToken refreshToken = refreshTokenService.createRefreshToken(creds.getEmail());
 
+    return new AuthResponse(accessToken, refreshToken.getToken());
+  }
 
-        ApiResponse<UserRolesDto> userResponse = userServiceClient.getUserByEmail(creds.getEmail());
+  public AuthResponse refreshToken(RefreshTokenRequest request) {
+    RefreshToken refreshToken = refreshTokenService.verifyExpiration(request.refreshToken());
 
-        String accessToken = jwtUtil.generateAccessToken(userResponse.data());
-        return new AuthResponse(accessToken, refreshToken.getToken());
-    }
+    UserCredentials creds =
+        userCredentialsRepository
+            .findByEmail(refreshToken.getUserEmail())
+            .orElseThrow(
+                () ->
+                    new UserNotFoundException(
+                        "User not found with email: " + refreshToken.getUserEmail()));
 
-    public void logout(String refreshToken) {
-        refreshTokenService.deleteRefreshToken(refreshToken);
-    }
+    ApiResponse<UserRolesDto> userResponse = userServiceClient.getUserByEmail(creds.getEmail());
 
-    public void forgotPassword(ForgotPasswordRequest request) {
-        UserCredentials existingUser = getUserByEmailOrThrow(request.email());
+    String accessToken = jwtUtil.generateAccessToken(userResponse.data());
+    return new AuthResponse(accessToken, refreshToken.getToken());
+  }
 
-        String resetToken = UUID.randomUUID().toString();
+  public void logout(String refreshToken) {
+    refreshTokenService.deleteRefreshToken(refreshToken);
+  }
 
-        passwordResetTokenService.saveToken(existingUser.getEmail(), resetToken, Duration.ofMinutes(15));
+  public void forgotPassword(ForgotPasswordRequest request) {
+    UserCredentials existingUser = getUserByEmailOrThrow(request.email());
 
-        ForgotPasswordEvent event = new ForgotPasswordEvent(existingUser.getId(), existingUser.getEmail(), resetToken,
-                UserEventType.FORGOT_PASSWORD.name());
+    String resetToken = UUID.randomUUID().toString();
 
-        producerTemplate.sendBody("direct:forgot-password-events", event);
-        log.info("Forgot password event published for user: {}", existingUser.getEmail());
-    }
+    passwordResetTokenService.saveToken(
+        existingUser.getEmail(), resetToken, Duration.ofMinutes(15));
 
-    @Transactional
-    public void resetPassword(ResetPasswordRequest request) {
-        String email = passwordResetTokenService.validateToken(request.token());
+    ForgotPasswordEvent event =
+        new ForgotPasswordEvent(
+            existingUser.getId(),
+            existingUser.getEmail(),
+            resetToken,
+            UserEventType.FORGOT_PASSWORD.name());
 
-        UserCredentials existingUser = getUserByEmailOrThrow(email);
+    producerTemplate.sendBody("direct:forgot-password-events", event);
+    log.info("Forgot password event published for user: {}", existingUser.getEmail());
+  }
 
-        existingUser.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        userCredentialsRepository.save(existingUser);
+  @Transactional
+  public void resetPassword(ResetPasswordRequest request) {
+    String email = passwordResetTokenService.validateToken(request.token());
 
-        passwordResetTokenService.invalidateToken(request.token());
+    UserCredentials existingUser = getUserByEmailOrThrow(email);
 
-        log.info("Password successfully reset for user: {}", existingUser.getEmail());
-    }
+    existingUser.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+    userCredentialsRepository.save(existingUser);
 
-    private UserCredentials getUserByEmailOrThrow(String email) {
-        return userCredentialsRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("User not found with email id: " + email));
-    }
+    passwordResetTokenService.invalidateToken(request.token());
 
+    log.info("Password successfully reset for user: {}", existingUser.getEmail());
+  }
+
+  private UserCredentials getUserByEmailOrThrow(String email) {
+    return userCredentialsRepository
+        .findByEmail(email)
+        .orElseThrow(() -> new UserNotFoundException("User not found with email id: " + email));
+  }
 }
