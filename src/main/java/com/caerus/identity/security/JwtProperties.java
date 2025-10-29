@@ -9,12 +9,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "application.security.jwt")
 public class JwtProperties {
 
-    private long expiration;
+  private long expiration;
 
-    private long refreshTokenExpiration;
+  private long refreshTokenExpiration;
 
-    public long getAccessTokenExpiration() {
-        return expiration;
-    }
-
+  public long getAccessTokenExpiration() {
+    return expiration;
+  }
 }

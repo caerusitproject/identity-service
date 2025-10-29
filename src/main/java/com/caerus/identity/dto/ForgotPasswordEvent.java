@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ForgotPasswordEvent {
-    private Long userId;
-    private String email;
-    private String resetToken;
-    private String eventType;
+  private Long userId;
+  private String email;
+  private String resetToken;
+  private String eventType;
 }

@@ -1,34 +1,28 @@
 package com.caerus.identity.enums;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import static com.caerus.identity.enums.Privilege.*;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.caerus.identity.enums.Privilege.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @RequiredArgsConstructor
 public enum Role {
-    ADMIN(
-            Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE, UPDATE_PRIVILEGE, DELETE_PRIVILEGE)
-    ),
-    USER(
-            Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE)
-    );
+  ADMIN(Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE, UPDATE_PRIVILEGE, DELETE_PRIVILEGE)),
+  USER(Set.of(READ_PRIVILEGE, WRITE_PRIVILEGE));
 
-    @Getter
-    private final Set<Privilege> privileges;
+  @Getter private final Set<Privilege> privileges;
 
-    public List<SimpleGrantedAuthority> getAuthorities(){
-        List<SimpleGrantedAuthority> authorities = getPrivileges()
-                .stream()
-                .map(privilege -> new SimpleGrantedAuthority(privilege.name()))
-                .collect(Collectors.toList());
+  public List<SimpleGrantedAuthority> getAuthorities() {
+    List<SimpleGrantedAuthority> authorities =
+        getPrivileges().stream()
+            .map(privilege -> new SimpleGrantedAuthority(privilege.name()))
+            .collect(Collectors.toList());
 
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + this.name()));
-        return authorities;
-    }
+    authorities.add(new SimpleGrantedAuthority("ROLE_" + this.name()));
+    return authorities;
+  }
 }

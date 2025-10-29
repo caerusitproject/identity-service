@@ -17,16 +17,15 @@ import lombok.Setter;
 @AllArgsConstructor
 public class UserCredentials {
 
-    @Id
-    @Column(unique = true, nullable = false, name = "user_id")
-    private Long id;
+  @Id
+  @Column(unique = true, nullable = false, name = "user_id")
+  private Long id;
 
-    @Column(unique = true, nullable = false)
-    private String email;
+  @Column(unique = true, nullable = false)
+  private String email;
 
-    @Column(nullable = false)
-    private String passwordHash;
+  @Column(nullable = false)
+  private String passwordHash;
 
-    private boolean enabled = true;
-    
+  private boolean enabled = true;
 }

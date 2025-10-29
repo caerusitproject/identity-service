@@ -11,8 +11,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 @EnableFeignClients(basePackages = "com.caerus.identity.client")
 public class IdentityServiceTicketingApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(IdentityServiceTicketingApplication.class, args);
-    }
-
+  public static void main(String[] args) {
+    SpringApplication.run(IdentityServiceTicketingApplication.class, args);
+  }
 }

@@ -11,17 +11,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class FeignErrorDecoder implements ErrorDecoder {
 
-    private final ErrorDecoder defaultErrorDecoder = new Default();
+  private final ErrorDecoder defaultErrorDecoder = new Default();
 
-
-    @Override
-    public Exception decode(String methodKey, Response response) {
-        return switch (response.status()) {
-            case 400 -> new ValidationException("Validation failed when calling User Service");
-            case 404 -> new UserNotFoundException("User not found in User Service");
-            case 409 -> new EmailAlreadyExistsException("User already exists in User Service");
-            default -> FeignException.errorStatus(methodKey, response);
-        };
-    }
-
+  @Override
+  public Exception decode(String methodKey, Response response) {
+    return switch (response.status()) {
+      case 400 -> new ValidationException("Validation failed when calling User Service");
+      case 404 -> new UserNotFoundException("User not found in User Service");
+      case 409 -> new EmailAlreadyExistsException("User already exists in User Service");
+      default -> FeignException.errorStatus(methodKey, response);
+    };
+  }
 }
