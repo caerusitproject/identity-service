@@ -3,6 +3,7 @@ package com.caerus.identity.exception;
 import com.caerus.identity.dto.ApiResponse;
 import feign.FeignException;
 import feign.RetryableException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
@@ -54,6 +56,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        log.error("Exception occurred: ", ex);
         return ResponseEntity.internalServerError().body(ApiResponse.failure("Something went wrong"));
     }
 
