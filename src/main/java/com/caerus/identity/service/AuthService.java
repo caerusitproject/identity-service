@@ -11,12 +11,14 @@ import com.caerus.identity.exception.UserNotFoundException;
 import com.caerus.identity.repository.UserCredentialsRepository;
 import com.caerus.identity.security.JwtUtil;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.camel.ProducerTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,9 @@ public class AuthService {
   private final UserServiceClient userServiceClient;
   private final PasswordResetTokenService passwordResetTokenService;
   private final ProducerTemplate producerTemplate;
+
+  @Value("${app.frontend.reset-password-url}")
+  private String resetPasswordUrl;
 
   @Transactional
   public Long register(UserRegisterRequestDto request) {
@@ -104,6 +109,7 @@ public class AuthService {
     UserCredentials existingUser = getUserByEmailOrThrow(request.email());
 
     String resetToken = UUID.randomUUID().toString();
+    String resetLink = resetPasswordUrl + "?token=" + resetToken;
 
     passwordResetTokenService.saveToken(
         existingUser.getEmail(), resetToken, Duration.ofMinutes(15));
@@ -112,8 +118,9 @@ public class AuthService {
         new ForgotPasswordEvent(
             existingUser.getId(),
             existingUser.getEmail(),
-            resetToken,
-            UserEventType.FORGOT_PASSWORD.name());
+            resetLink,
+            UserEventType.FORGOT_PASSWORD.name(),
+            List.of("EMAIL"));
 
     producerTemplate.sendBody("direct:forgot-password-events", event);
     log.info("Forgot password event published for user: {}", existingUser.getEmail());
