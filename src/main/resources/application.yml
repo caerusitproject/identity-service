@@ -93,6 +93,9 @@ camel:
   springboot:
     name: identityservice-camel
 
+app:
+  frontend:
+    reset-password-url: "http://localhost:3006/reset_password"
 
 #server:
 #  port: 8086
