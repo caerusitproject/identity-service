@@ -1,13 +1,3 @@
-#spring:
-#  application:
-#    name: identity-service
-#  profiles:
-#    active: dev
-#  config:
-#    import: optional:configserver:http://localhost:8888
-#
-#
-
 server:
   port: 8086
 
@@ -185,3 +175,7 @@ app:
 #      brokers: broker:29092
 #      requestTimeoutMs: 20000
 #      retryBackoffMs: 5000
+#
+#app:
+#  frontend:
+#    reset-password-url: "http://localhost:3006/reset_password"
